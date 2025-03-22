@@ -203,7 +203,12 @@ class DialogueSystem:
         self.ui_texture = glGenTextures(1)
         self.current_npc = None  # Track which NPC we're talking to
         self.initial_player_pos = None  # Store initial position when dialogue starts
- 
+
+    async def handle_speech(self, audio_data):
+        audio_bytes = io.BytesIO(audio_data.tobytes())
+        response = await openai_realtime_ws(audio_bytes)
+        self.npc_message = response
+        
     def send_text_to_ai(self, user_input):
         print(f"[DEBUG] Sending to AI: {user_input}")
 
@@ -398,10 +403,7 @@ class DialogueSystem:
         }]
         
         print(f"[DialogueSystem] Dialogue started with {npc_role}")
-    async def handle_speech(self, audio_data):
-        audio_bytes = io.BytesIO(audio_data.tobytes())
-        response = await openai_realtime_ws(audio_bytes)
-        self.npc_message = response
+
 
     def send_message(self):
         if not self.conversation_history:
@@ -1507,8 +1509,6 @@ class Game3D:
                         running = False
                     elif event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
-                            audio_data = record_audio()
-                            asyncio.run(self.dialogue.handle_speech(audio_data))
                             pygame.mouse.set_visible(True)
                             pygame.event.set_grab(False)
                             running = False
